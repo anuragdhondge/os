@@ -1,119 +1,100 @@
-#!/bin/sh
-create()
-{
-echo "Enter name of database."
-read dn
-res=`ls | grep $dn | wc -w` 
-if [ "$res" -gt "0" ]
-then
-echo "Database already exists."
-else
-touch $dn
-echo "Database created successfully."
-fi
+#!/bin/bash
+
+# Initialize an empty array to store address book records
+declare -a address_book
+
+# Function to create an address book
+create_address_book() {
+    read -p "Enter number of records: " n
+    for ((i=0; i<$n; i++))
+    do
+        read -p "Enter details for record $((i+1)):" name phone email
+        address_book+=("$name $phone $email")
+    done
+    echo "Address book created successfully!"
 }
-display()
-{
-echo `ls`
-echo "Enter name of database."
-read dn
-res=`ls | grep $dn | wc -w`
-if [ "$res" -gt "0" ] 
-then
-cat $dn
-else
-echo "Databse not found."
-fi
+
+# Function to view the address book
+view_address_book() {
+    if [ ${#address_book[@]} -eq 0 ]; then
+        echo "Address book is empty."
+        return
+    fi
+    echo "Address book:"
+    printf "%-20s %-20s %-20s\n" "Name" "Phone" "Email"
+    for record in "${address_book[@]}"
+    do
+        IFS=' ' read -r -a fields <<< "$record"
+        printf "%-20s %-20s %-20s\n" "${fields[0]}" "${fields[1]}" "${fields[2]}"
+    done
 }
-insert()
-{
-echo "Enter name of database."
-read dn
-res=`ls | grep $dn | wc -w`
-if [ "$res" -gt "0" ]
-then
-echo "Enter Mobile No."
-read mob
-res1=`cat $dn | grep $mob | wc -w`
-if [ "$res1" -gt "0" ]
-then 
-echo "Phone No. already exists." 
-else
-echo "Enter first name, last name"
-read fname lname
-record=`echo $mob $fname $lname`
-echo $record >> $dn 
-echo "Record inserted successfully"
-fi
-else
-echo "Databse not found."
-fi
+
+# Function to insert a record into the address book
+insert_record() {
+    read -p "Enter details for new record: " name phone email
+    address_book+=("$name $phone $email")
+    echo "New record inserted successfully!"
 }
-update()
-{
-echo "Enter name of database."
-read dn
-res=`ls | grep $dn | wc -w`
-if [ "$res" -gt "0" ]
-then
-echo "Enter Mobile No."
-read mob
-res1=`cat $dn | grep $mob | wc -w`
-if [ "$res1" -gt "0" ]
-then 
-echo "Enter new details first name, last name, phone no."
-read fname lname mob
-newr=`echo $mob $fname $lname`
-oldr=`cat $dn | grep $mob`
-sed -i s/"$oldr"/"$newr"/g $dn
-echo "Record updated successfully"
-else
-echo "Phone no. not found."
-fi
-else
-echo "Databse not found."
-fi
+
+# Function to delete a record from the address book
+delete_record() {
+    read -p "Enter name of record to delete: " name
+    found=0
+    for ((i=0; i<${#address_book[@]}; i++))
+    do
+        if [[ "${address_book[$i]}" == *"$name"* ]]; then
+            unset address_book[$i]
+            address_book=("${address_book[@]}")
+            found=1
+            echo "Record deleted successfully!"
+            break
+        fi
+    done
+    if [ $found -eq 0 ]; then
+        echo "Record not found."
+    fi
 }
-delete()
-{
-echo "Enter name of database."
-read dn
-res=`ls | grep $dn | wc -w`
-if [ "$res" -gt "0" ]
-then
-echo "Enter Mobile No."
-read mob
-res1=`cat $dn | grep $mob | wc -w`
-if [ "$res1" -gt "0" ]
-then 
-oldr=`cat $dn | grep $mob`
-sed -i s/"$oldr"//g $dn
-echo "Record deleted successfully"
-else
-echo "Phone no. not found."
-fi
-else
-echo "Databse not found."
-fi
+
+# Function to modify a record in the address book
+modify_record() {
+    read -p "Enter name of record to modify: " name
+    found=0
+    for ((i=0; i<${#address_book[@]}; i++))
+    do
+        if [[ "${address_book[$i]}" == *"$name"* ]]; then
+            read -p "Enter new details for record: " new_name new_phone new_email
+            address_book[$i]="$new_name $new_phone $new_email"
+            found=1
+            echo "Record modified successfully!"
+            break
+        fi
+    done
+    if [ $found -eq 0 ]; then
+        echo "Record not found."
+    fi
 }
-while [ true ]
+
+# Main program loop
+while true
 do
-echo "*********Menu********"
-echo "1) Create Database"
-echo "2) Display Database"
-echo "3) Insert a record"
-echo "4) Update a record"
-echo "5) Delete a record"
-echo "6) Exit"
-echo "Enter your choice : "
-read choice
-case $choice in 
-1) create;;
-2) display;;
-3) insert;;
-4) update;;
-5) delete;;
-6) exit;;
-*) echo "Enter correct choice."
-esac
+    echo "Options:"
+    echo "1. Create address book"
+    echo "2. View address book"
+    echo "3. Insert a record"
+    echo "4. Delete a record"
+    echo "5. Modify a record"
+    echo "6. Exit"
+
+    read -p "Enter your choice: " choice
+
+    case $choice in
+        1) create_address_book;;
+        2) view_address_book;;
+        3) insert_record;;
+        4) delete_record;;
+        5) modify_record;;
+        6) exit;;
+        *) echo "Invalid choice. Try again.";;
+    esac
 done
+
